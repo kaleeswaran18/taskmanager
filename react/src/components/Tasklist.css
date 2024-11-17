@@ -1,0 +1,343 @@
+/* Overlay for Popup */
+.popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1050;
+  }
+  
+  /* Main Popup Styling */
+  .popup {
+    background: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    width: 400px;
+    max-width: 100%;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    position: relative;
+  }
+  
+  /* Close Icon in Popup */
+  .close-icon {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    cursor: pointer;
+    font-size: 20px;
+  }
+  
+  /* Buttons Styling */
+  .add-task-btn,
+  .submit-btn,
+  .cancel-btn {
+    margin: 5px;
+    padding: 10px 20px;
+    border: none;
+    background-color: #007bff;
+    color: white;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+  }
+  
+  .add-task-btn:hover,
+  .submit-btn:hover {
+    background-color: #0056b3;
+  }
+  
+  .cancel-btn {
+    background-color: #dc3545;
+  }
+  
+  .cancel-btn:hover {
+    background-color: #c82333;
+  }
+  
+  /* Confirmation Popup Styles */
+  .confirmation-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1050;
+  }
+  
+  .confirmation-popup-content {
+    background-color: white;
+    padding: 20px;
+    border-radius: 5px;
+    text-align: center;
+  }
+  
+  .confirmation-popup-content button {
+    margin: 10px;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  .confirmation-popup-content button:hover {
+    opacity: 0.9;
+  }
+  
+  /* Task List and Task Styling */
+  .task-list {
+    font-family: Arial, sans-serif;
+  }
+  
+  .task-list table {
+    width: 100%;
+    margin-top: 20px;
+  }
+  
+  .task-summary {
+    cursor: pointer;
+    margin-bottom: 10px;
+    padding: 12px;
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+  }
+  
+  .task-summary:hover {
+    background-color: #e0e0e0;
+  }
+  
+  .task-details {
+    margin-top: 10px;
+    padding: 12px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+  }
+  
+  /* General Button Styling */
+  button {
+    padding: 8px 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s, transform 0.2s;
+    border: none;
+    margin-right: 10px;
+  }
+  
+  button:hover {
+    transform: scale(1.05);
+  }
+  
+  button.edit {
+    background-color: #4CAF50; /* Green */
+    color: white;
+  }
+  
+  button.edit:hover {
+    background-color: #45a049; /* Darker green */
+  }
+  
+  button.delete {
+    background-color: #f44336; /* Red */
+    color: white;
+  }
+  
+  button.delete:hover {
+    background-color: #e53935; /* Darker red */
+  }
+  
+  /* Popup Button Adjustments */
+  button.popup-button {
+    background-color: #2196F3; /* Blue for action buttons */
+    color: white;
+  }
+  
+  button.popup-button:hover {
+    background-color: #0b79d1; /* Darker blue */
+  }
+  
+  /* Task List and Form Styles */
+  .form-group {
+    margin-bottom: 15px;
+  }
+  
+  .btn {
+    width: 48%;
+  }
+  
+  .task-list .task {
+    margin-bottom: 15px;
+  }
+  
+  .task-summary {
+    cursor: pointer;
+    margin-bottom: 10px;
+    padding: 10px;
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+  }
+  
+  .task-details {
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+  }
+  /* Status Popup Styling */
+.status-popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1050;
+  }
+  
+  .status-popup {
+    background: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    width: 400px;
+    max-width: 100%;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    position: relative;
+  }
+  
+  .status-popup select {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+  }
+  
+  .status-popup .form-buttons button {
+    margin: 10px 5px;
+    padding: 10px 20px;
+    border: none;
+    background-color: #007bff;
+    color: white;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+  }
+  
+  .status-popup .form-buttons button:hover {
+    background-color: #0056b3;
+  }
+  
+  .status-popup .form-buttons button.cancel {
+    background-color: #dc3545;
+  }
+  
+  .status-popup .form-buttons button.cancel:hover {
+    background-color: #c82333;
+  }
+  .popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+  }
+  
+  .popup {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    width: 60%;
+    max-height: 80%;
+    overflow-y: auto;
+  }
+  
+  .close-icon {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 30px;
+    cursor: pointer;
+  }
+  
+  .logs-container {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .log-card {
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    margin: 10px 0;
+    padding: 15px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .log-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  
+  .log-header h4 {
+    margin: 0;
+    font-size: 1.2em;
+  }
+  
+  .log-body p {
+    margin: 5px 0;
+  }
+  
+  .log-body strong {
+    font-weight: bold;
+  }
+  .popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000; /* Ensure the popup appears above other content */
+  }
+  
+  .popup {
+    background-color: white;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    position: relative;
+  }
+  
+  .close-icon {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    cursor: pointer;
+    font-size: 24px;
+  }
+  
