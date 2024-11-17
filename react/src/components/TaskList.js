@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect } from "react";
-import { AppContext } from "../context/AppContext";
+import { AppContext, useAppContext } from "../context/AppContext";
 import { Link } from "react-router-dom";
 import "./Tasklist.css"; // Add your CSS file for styling
 import axios from "axios";
@@ -28,6 +28,10 @@ const TaskList = () => {
   const checkAdmin = JSON.parse(localStorage.getItem("user"));
   const isAdmin = checkAdmin?.role === "Admin"; // Check if the user is an admin
 
+
+  const { socketCon } = useAppContext();
+
+
   // Format the date to YYYY-MM-DD for input fields
   const formatDate = (date) => {
     if (!date) return "";
@@ -47,133 +51,133 @@ const TaskList = () => {
     return selectedDate >= today;
   };
 
-const handleFormSubmit = async (e) => {
-  e.preventDefault();
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
 
-  // Validate fields
-  if (!newTask.title || !newTask.description || !newTask.dueDate || !newTask.assignedUser) {
-    setError("All fields are required.");
-    return;
-  }
+    // Validate fields
+    if (!newTask.title || !newTask.description || !newTask.dueDate || !newTask.assignedUser) {
+      setError("All fields are required.");
+      return;
+    }
 
-  if (!isValidDate(newTask.dueDate)) {
-    setError("Due date must be today or a future date.");
-    return;
-  }
+    if (!isValidDate(newTask.dueDate)) {
+      setError("Due date must be today or a future date.");
+      return;
+    }
 
-  const taskData = {
-    title: newTask.title,
-    description: newTask.description,
-    dueDate: newTask.dueDate,
-    status: newTask.status,
-    assignedUser: newTask.assignedUser,
+    const taskData = {
+      title: newTask.title,
+      description: newTask.description,
+      dueDate: newTask.dueDate,
+      status: newTask.status,
+      assignedUser: newTask.assignedUser,
+    };
+
+    try {
+      if (editId) {
+        // Update task
+        taskData.id = editId;
+        await axios.put("http://localhost:7000/users", taskData, {
+          headers: { Authorization: `Bearer ${checkAdmin.token}` },
+        });
+
+        // After updating the task, re-fetch all tasks from the server to ensure the UI is updated
+        const updatedTasksResponse = await axios.get("http://localhost:7000/users", {
+          headers: { Authorization: `Bearer ${checkAdmin.token}` },
+        });
+
+        // Update the tasks state and localStorage with the updated tasks
+        setTasks(updatedTasksResponse.data.data);
+        localStorage.setItem("tasks", JSON.stringify(updatedTasksResponse.data.data));
+      } else {
+        // Create new task
+        const response = await axios.post("http://localhost:7000/users", taskData, {
+          headers: { Authorization: `Bearer ${checkAdmin.token}` },
+        });
+
+        // Add new task to state and localStorage
+        setTasks((prevTasks) => [...prevTasks, response.data.data]);
+        localStorage.setItem("tasks", JSON.stringify([...tasks, response.data.data]));
+      }
+
+      // Reset the form
+      setNewTask({ title: "", description: "", dueDate: "", status: "To Do", assignedUser: "" });
+      setIsPopupOpen(false);
+      setEditId("");
+    } catch (error) {
+      console.error("Failed to create/update task:", error);
+      setError("Failed to save task. Please try again.");
+    }
   };
-
-  try {
-    if (editId) {
-      // Update task
-      taskData.id = editId;
-      await axios.put("http://localhost:7000/users", taskData, {
-        headers: { Authorization: `Bearer ${checkAdmin.token}` },
-      });
-
-      // After updating the task, re-fetch all tasks from the server to ensure the UI is updated
-      const updatedTasksResponse = await axios.get("http://localhost:7000/users", {
-        headers: { Authorization: `Bearer ${checkAdmin.token}` },
-      });
-
-      // Update the tasks state and localStorage with the updated tasks
-      setTasks(updatedTasksResponse.data.data);
-      localStorage.setItem("tasks", JSON.stringify(updatedTasksResponse.data.data));
-    } else {
-      // Create new task
-      const response = await axios.post("http://localhost:7000/users", taskData, {
-        headers: { Authorization: `Bearer ${checkAdmin.token}` },
-      });
-
-      // Add new task to state and localStorage
-      setTasks((prevTasks) => [...prevTasks, response.data.data]);
-      localStorage.setItem("tasks", JSON.stringify([...tasks, response.data.data]));
-    }
-
-    // Reset the form
-    setNewTask({ title: "", description: "", dueDate: "", status: "To Do", assignedUser: "" });
-    setIsPopupOpen(false);
-    setEditId("");
-  } catch (error) {
-    console.error("Failed to create/update task:", error);
-    setError("Failed to save task. Please try again.");
-  }
-};
-const filterTasks = () => {
-  let filteredTasks = tasks.filter((task) => {
-    const isDueDateMatch =
-      !filterDueDate || new Date(task.dueDate).toISOString().split("T")[0] === filterDueDate;
-    const isStatusMatch = !filterStatus || task.status === filterStatus;
-    return isDueDateMatch && isStatusMatch;
-  });
-
-  // Sort tasks by dueDate (ascending), then by status (ascending)
-  filteredTasks.sort((a, b) => {
-    const dueDateA = new Date(a.dueDate);
-    const dueDateB = new Date(b.dueDate);
-    
-    if (dueDateA !== dueDateB) {
-      return dueDateA - dueDateB; // Sort by dueDate
-    }
-    
-    // If dueDates are equal, sort by status (you can adjust this sorting logic based on your requirements)
-    return a.status.localeCompare(b.status);
-  });
-
-  return filteredTasks;
-};
-const fetchActiveLogs = async () => {
-  try {
-    // Determine the role to send to the backend
-    const role = checkAdmin.role === "Admin" ? "Admin" : checkAdmin._id;
-    
-    // Sending role as query parameter to the API
-    const response = await axios.get('http://localhost:7000/users/logs', {
-      params: { role }, // Send role as a query parameter
-      headers: {
-        Authorization: `Bearer ${checkAdmin.token}`, // Send the token for authentication
-      },
+  const filterTasks = () => {
+    let filteredTasks = tasks.filter((task) => {
+      const isDueDateMatch =
+        !filterDueDate || new Date(task.dueDate).toISOString().split("T")[0] === filterDueDate;
+      const isStatusMatch = !filterStatus || task.status === filterStatus;
+      return isDueDateMatch && isStatusMatch;
     });
 
-    console.log(response.data.data, 'response.data.data');
-    setActiveLogs(response.data.data); // Assuming the API returns logs in response.data.data
-  } catch (error) {
-    console.error("Error fetching active logs:", error);
-    setError("Failed to fetch active logs. Please try again.");
-  }
-};
+    // Sort tasks by dueDate (ascending), then by status (ascending)
+    filteredTasks.sort((a, b) => {
+      const dueDateA = new Date(a.dueDate);
+      const dueDateB = new Date(b.dueDate);
 
+      if (dueDateA !== dueDateB) {
+        return dueDateA - dueDateB; // Sort by dueDate
+      }
 
+      // If dueDates are equal, sort by status (you can adjust this sorting logic based on your requirements)
+      return a.status.localeCompare(b.status);
+    });
 
-// Toggle the Active Log popup
-const toggleActiveLogPopup = async () => {
-  setActiveLogPopup((prev) => !prev);
-  if (!activeLogPopup) {
-    await fetchActiveLogs(); // Fetch logs when the popup is opened
-  }
-};
-useEffect(() => {
-  // Fetch tasks from the server on component mount
-  const fetchTasks = async () => {
+    return filteredTasks;
+  };
+  const fetchActiveLogs = async () => {
     try {
-      const response = await axios.get("http://localhost:7000/users", {
-        headers: { Authorization: `Bearer ${checkAdmin.token}` },
+      // Determine the role to send to the backend
+      const role = checkAdmin.role === "Admin" ? "Admin" : checkAdmin._id;
+
+      // Sending role as query parameter to the API
+      const response = await axios.get('http://localhost:7000/users/logs', {
+        params: { role }, // Send role as a query parameter
+        headers: {
+          Authorization: `Bearer ${checkAdmin.token}`, // Send the token for authentication
+        },
       });
-      setTasks(response.data.data);
-      localStorage.setItem("tasks", JSON.stringify(response.data.data)); // Store the tasks in localStorage
+
+      console.log(response.data.data, 'response.data.data');
+      setActiveLogs(response.data.data); // Assuming the API returns logs in response.data.data
     } catch (error) {
-      console.error("Error fetching tasks:", error);
+      console.error("Error fetching active logs:", error);
+      setError("Failed to fetch active logs. Please try again.");
     }
   };
 
-  fetchTasks();
-}, [setTasks]);
+
+
+  // Toggle the Active Log popup
+  const toggleActiveLogPopup = async () => {
+    setActiveLogPopup((prev) => !prev);
+    if (!activeLogPopup) {
+      await fetchActiveLogs(); // Fetch logs when the popup is opened
+    }
+  };
+  useEffect(() => {
+    // Fetch tasks from the server on component mount
+    const fetchTasks = async () => {
+      try {
+        const response = await axios.get("http://localhost:7000/users", {
+          headers: { Authorization: `Bearer ${checkAdmin.token}` },
+        });
+        setTasks(response.data.data);
+        localStorage.setItem("tasks", JSON.stringify(response.data.data)); // Store the tasks in localStorage
+      } catch (error) {
+        console.error("Error fetching tasks:", error);
+      }
+    };
+
+    fetchTasks();
+  }, [setTasks]);
 
   const editTask = (task) => {
     setNewTask({
@@ -186,7 +190,7 @@ useEffect(() => {
   };
 
   const openDeleteConfirmation = (taskId) => {
-    console.log(taskId,'taskId')
+    console.log(taskId, 'taskId')
     setTaskToDelete(taskId);
     setDeleteConfirmationOpen(true);
   };
@@ -217,11 +221,11 @@ useEffect(() => {
     setEditId("");
     setDeleteConfirmationOpen(false); // Close the confirmation popup without deleting
     setTaskToDelete(null); // Reset task to delete
-    
+
   };
 
   const openStatusChangePopup = (task) => {
-    
+
     setTaskToChangeStatus(task._id);
     setSelectedStatus(task.status);
     setStatusChangePopup(true);
@@ -230,15 +234,17 @@ useEffect(() => {
   const handleStatusChange = async (e) => {
     e.preventDefault();
     try {
-      console.log(selectedStatus,'allfind')
+      console.log(selectedStatus, 'allfind')
       // let senddata={
       // id:taskToChangeStatus,
       // status:selectedStatus,
       // changestatus:true
       // }
-      await axios.put(`http://localhost:7000/users`, { id:taskToChangeStatus,
-        status:selectedStatus,
-        changestatus:true }, {
+      await axios.put(`http://localhost:7000/users`, {
+        id: taskToChangeStatus,
+        status: selectedStatus,
+        changestatus: true
+      }, {
         headers: { Authorization: `Bearer ${checkAdmin.token}` },
       });
 
@@ -270,19 +276,20 @@ useEffect(() => {
   }, [setTasks]);
 
   // Optionally, if you are using socket.io for live updates:
-  useEffect(() => {
-    const socketConnection = io("http://localhost:7000");
-    setSocket(socketConnection);
+  // useEffect(() => {
+  //   const socketConnection = io("http://localhost:7000");
+  //   setSocket(socketConnection);
 
-    // Listen for new tasks or updates from other users
-    socketConnection.on("taskAdded", (newTask) => {
-      setTasks((prevTasks) => [...prevTasks, newTask]);
-    });
+  //   // Listen for new tasks or updates from other users
+  //   socketConnection.on("taskAdded", (newTask) => {
+  //     setTasks((prevTasks) => [...prevTasks, newTask]);
+  //   });
 
-    return () => {
-      socketConnection.disconnect();
-    };
-  }, []);
+  //   return () => {
+  //     socketConnection.disconnect();
+  //   };
+  //   // taskList
+  // }, []);
 
   return (
     <div className="task-list">
@@ -294,51 +301,51 @@ useEffect(() => {
         </button>
       )}
       <button className="view-log-btn" onClick={toggleActiveLogPopup}>
-            {activeLogPopup ? "Close Active Log" : "View Active Log"}
-          </button>
-          {activeLogPopup && (
-  <div className="popup-overlay">
-    <div className="popup">
-      <span className="close-icon" onClick={toggleActiveLogPopup}>
-        &times;
-      </span>
-      <h3>Active Logs</h3>
-      <div className="logs-container">
-        {activeLogs?.map((log, index) => (
-          <div key={log._id} className="log-card">
-            <div className="log-header">
-              <h4>{log.userId?.username}</h4> {/* Display user name */}
-              <p>{log.action}</p> {/* Display action */}
-            </div>
-            <div className="log-body">
-              <p><strong>Task Name:</strong> {log.title || 'N/A'}</p> {/* Display task title */}
-              <p><strong>Update Time:</strong> {log.updateTime}</p> {/* Display update time */}
-              <p><strong>Date:</strong> {log.date}</p> {/* Display date */}
+        {activeLogPopup ? "Close Active Log" : "View Active Log"}
+      </button>
+      {activeLogPopup && (
+        <div className="popup-overlay">
+          <div className="popup">
+            <span className="close-icon" onClick={toggleActiveLogPopup}>
+              &times;
+            </span>
+            <h3>Active Logs</h3>
+            <div className="logs-container">
+              {activeLogs?.map((log, index) => (
+                <div key={log._id} className="log-card">
+                  <div className="log-header">
+                    <h4>{log.userId?.username}</h4> {/* Display user name */}
+                    <p>{log.action}</p> {/* Display action */}
+                  </div>
+                  <div className="log-body">
+                    <p><strong>Task Name:</strong> {log.title || 'N/A'}</p> {/* Display task title */}
+                    <p><strong>Update Time:</strong> {log.updateTime}</p> {/* Display update time */}
+                    <p><strong>Date:</strong> {log.date}</p> {/* Display date */}
+                  </div>
+                </div>
+              ))}
+              {activeLogs.length === 0 && <p>No active logs available.</p>}
             </div>
           </div>
-        ))}
-        {activeLogs.length === 0 && <p>No active logs available.</p>}
-      </div>
-    </div>
-  </div>
-)}
+        </div>
+      )}
 
       {isPopupOpen && (
         <div className="popup-overlay">
           <div className="popup">
-          <span
-  className="close-icon"
-  onClick={() => {
-    // Reset the form data to its initial state
-    setNewTask({ title: "", description: "", dueDate: "", status: "To Do", assignedUser: "" });
-    // Clear the edit ID
-    setEditId("");
-    // Close the popup
-    setIsPopupOpen(false);
-  }}
->
-  &times;
-</span>
+            <span
+              className="close-icon"
+              onClick={() => {
+                // Reset the form data to its initial state
+                setNewTask({ title: "", description: "", dueDate: "", status: "To Do", assignedUser: "" });
+                // Clear the edit ID
+                setEditId("");
+                // Close the popup
+                setIsPopupOpen(false);
+              }}
+            >
+              &times;
+            </span>
 
             <h3>{editId ? "Update Task" : "Add New Task"}</h3>
             {error && <p className="error">{error}</p>}
@@ -374,8 +381,8 @@ useEffect(() => {
                 <label>
                   Status:
                   <select name="status" value={newTask.status} onChange={handleInputChange}>
-                  <option value="To Do">To Do</option>
-                  <option value="In Progress">In Progress</option>
+                    <option value="To Do">To Do</option>
+                    <option value="In Progress">In Progress</option>
                   </select>
                 </label>
               </div>
@@ -383,56 +390,56 @@ useEffect(() => {
                 <label>
                   Assigned User:
                   <select
-  name="assignedUser"
-  value={newTask.assignedUser}
-  onChange={handleInputChange}
->
-  <option value="">Select User</option>
-  {tasks
-    ?.map((task) => task.assignedUser)
-    .filter(
-      (user, index, self) =>
-        user &&
-        self.findIndex((u) => u?._id === user?._id) === index // Unique users
-    )
-    .map((user) => (
-      <option key={user._id} value={user._id}>
-        {user.username}
-      </option>
-    ))}
-</select>
+                    name="assignedUser"
+                    value={newTask.assignedUser}
+                    onChange={handleInputChange}
+                  >
+                    <option value="">Select User</option>
+                    {tasks
+                      ?.map((task) => task.assignedUser)
+                      .filter(
+                        (user, index, self) =>
+                          user &&
+                          self.findIndex((u) => u?._id === user?._id) === index // Unique users
+                      )
+                      .map((user) => (
+                        <option key={user._id} value={user._id}>
+                          {user.username}
+                        </option>
+                      ))}
+                  </select>
 
                 </label>
               </div>
               <div className="form-buttons">
                 <button type="submit">{editId ? "Update Task" : "Create Task"}</button>
                 <button
-  type="button"
-  onClick={() => {
-    setNewTask({ title: "", description: "", dueDate: "", status: "To Do", assignedUser: "" });  // Reset form data
-    setEditId(""); // Clear edit ID
-    setIsPopupOpen(false); // Close the popup
-  }}
->
-  Cancel
-</button>
+                  type="button"
+                  onClick={() => {
+                    setNewTask({ title: "", description: "", dueDate: "", status: "To Do", assignedUser: "" });  // Reset form data
+                    setEditId(""); // Clear edit ID
+                    setIsPopupOpen(false); // Close the popup
+                  }}
+                >
+                  Cancel
+                </button>
               </div>
             </form>
           </div>
         </div>
       )}
-{deleteConfirmationOpen && (
-      <div className="popup-overlay">
-        <div className="popup">
-          <span className="close-icon" onClick={cancelDelete}>&times;</span>
-          <h3>Are you sure you want to delete this task?</h3>
-          <div className="form-buttons">
-            <button onClick={confirmDelete}>Yes</button>
-            <button onClick={cancelDelete}>Cancel</button>
+      {deleteConfirmationOpen && (
+        <div className="popup-overlay">
+          <div className="popup">
+            <span className="close-icon" onClick={cancelDelete}>&times;</span>
+            <h3>Are you sure you want to delete this task?</h3>
+            <div className="form-buttons">
+              <button onClick={confirmDelete}>Yes</button>
+              <button onClick={cancelDelete}>Cancel</button>
+            </div>
           </div>
         </div>
-      </div>
-    )}
+      )}
       {/* Change Status Popup */}
       {statusChangePopup && (
         <div className="popup-overlay">
@@ -455,7 +462,7 @@ useEffect(() => {
                   </select>
                 </label>
               </div>
-              
+
               <div className="form-buttons">
                 <button type="submit">Change Status</button>
                 <button type="button" onClick={cancelStatusChange}>Cancel</button>
@@ -465,7 +472,7 @@ useEffect(() => {
         </div>
       )}
 
-<div className="filters">
+      <div className="filters">
         <label>
           Filter by Status:
           <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>

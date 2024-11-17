@@ -1,17 +1,43 @@
 import React, { createContext, useState, useEffect, useContext } from "react";
 import axios from "axios";
+import io from 'socket.io-client';
+
 
 export const AppContext = createContext();
 
 const AppProvider = ({ children }) => {
   const [tasks, setTasks] = useState([]); // State for tasks
   const [user, setUser] = useState(null); // Store logged-in user information
+  const [socketCon, setSocketCon] = useState(null)
 
   // Load tasks from localStorage on mount
   useEffect(() => {
     const storedTasks = JSON.parse(localStorage.getItem("tasks"));
     if (storedTasks) {
       setTasks(storedTasks);
+    }
+    const socket = io('http://localhost:7000');
+    setSocketCon(socket)
+
+    socket.on('newTask', (data) => {
+      console.log(data, "javdash")
+      var out = []
+      out = [...tasks]
+      out.push(data)
+      setTasks(out);
+    })
+
+    //new event list
+    // socket.on('updateTask', (data) => {
+    //   console.log(data, "javdash")
+    //   var out = []
+    //   out = [...tasks]
+    //   out.push(data)
+    //   setTasks(out);
+    // })
+
+    return () => {
+      socket.disconnect();
     }
   }, []);
 
@@ -39,7 +65,7 @@ const AppProvider = ({ children }) => {
       fetchData();
     }
   }, [user]);
-
+  console.log(tasks, "tasks")
   // Task management functions
   const addTask = (task) => {
     setTasks((prevTasks) => {
@@ -77,6 +103,7 @@ const AppProvider = ({ children }) => {
         addTask,
         updateTask,
         deleteTask,
+        socketCon
       }}
     >
       {children}

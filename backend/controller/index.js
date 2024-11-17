@@ -1,6 +1,7 @@
 const User = require('../model/model');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { userSockets } = require('../socket');
 require('dotenv').config();
 
 console.log(process.env.NODE_ENV); // production

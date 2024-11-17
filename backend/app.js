@@ -11,32 +11,23 @@ const model = require("./model");
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
+const { initializeSocket } = require('./socket');
 
 var app = express();
 var server = http.createServer(app); // Create HTTP server
-var io = new Server(server, {
-  cors: {
-    origin: "*", // Allow all origins (adjust for production)
-  },
-});
 
-// Set up Socket.IO
-io.on("connection", (socket) => {
-  console.log("A user connected");
 
-  // Emit a welcome message
-  socket.emit("welcome", "Welcome to the Task Management System");
 
-  socket.on("disconnect", () => {
-    console.log("A user disconnected");
-  });
-});
+var io = initializeSocket(server);
 
-// Make Socket.IO instance accessible in routes
+
 app.use((req, res, next) => {
   req.io = io;
   next();
 });
+
+
+
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
