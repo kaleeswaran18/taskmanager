@@ -311,7 +311,7 @@ useEffect(() => {
               <p>{log.action}</p> {/* Display action */}
             </div>
             <div className="log-body">
-              <p><strong>Task Name:</strong> {log.taskId?.title || 'N/A'}</p> {/* Display task title */}
+              <p><strong>Task Name:</strong> {log.title || 'N/A'}</p> {/* Display task title */}
               <p><strong>Update Time:</strong> {log.updateTime}</p> {/* Display update time */}
               <p><strong>Date:</strong> {log.date}</p> {/* Display date */}
             </div>

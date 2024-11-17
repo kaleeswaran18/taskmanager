@@ -17,6 +17,7 @@ const createTask = async (req, res) => {
       action:'create a task',
       userId:task.assignedUser,
       taskId:task._id,
+      title:task.title,
       date:date,
       updateTime:currentTime
     })
@@ -77,6 +78,7 @@ const updateTask = async (req, res) => {
     const currentTime = moment().format('HH:mm:ss');
     var value=await ActiveLog.create({
       action:'status change',
+      title:check[0].title,
       userId:check[0].assignedUser,
       taskId:id,
       date:date,
@@ -105,6 +107,7 @@ const updateTask = async (req, res) => {
       var value=await ActiveLog.create({
         action:'update a task',
         userId:assignedUser,
+        title:task.title,
         taskId:id,
         date:date,
         updateTime:currentTime,
@@ -133,6 +136,7 @@ const deleteTask = async (req, res) => {
     const currentTime = moment().format('HH:mm:ss');
     var value=await ActiveLog.create({
       action:'delete  a task',
+      title:task.title,
       userId:task.assignedUser,
       taskId:task._id,
       date:date,
