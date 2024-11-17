@@ -2,7 +2,7 @@
 ;
 const express = require('express');
 const { verifyToken, checkRole } = require("../middlewares/auth");
-const { register, login, logout } = require('../controller/index');
+const { register, login, logout,alluser } = require('../controller/index');
 const {
     createTask,
     getTasks,
@@ -15,6 +15,7 @@ const {
 const router = express.Router();
 
 router.post('/register', register);
+router.get('/alluser', alluser);
 router.post('/login', login);
 router.post('/logout', logout);
 

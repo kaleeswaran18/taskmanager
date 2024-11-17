@@ -66,4 +66,14 @@ const login = async (req, res) => {
   const logout = (req, res) => {
     res.json({ message: 'Logout successful' });
   };
-module.exports = { register,logout,login };
+  const alluser=async(req,res)=>{
+  // const details=await User.find()
+  const tasks = await User.find({
+    role: { $ne: "Admin" }, // Use $ne to exclude tasks from a specific user
+  });
+  res.status(200).send({
+    tasks,
+    message: "get all user!"
+})
+  }
+module.exports = { register,logout,login,alluser };

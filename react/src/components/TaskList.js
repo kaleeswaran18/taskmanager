@@ -8,6 +8,7 @@ import { io } from "socket.io-client"; // Import socket.io-client
 const TaskList = () => {
   const { tasks, setTasks } = useContext(AppContext); // Get tasks and setTasks from context
   const [isPopupOpen, setIsPopupOpen] = useState(false); // State for task form popup visibility
+  const [users, setUsers] = useState([]);
   const [newTask, setNewTask] = useState({
     title: "",
     description: "",
@@ -50,7 +51,21 @@ const TaskList = () => {
     const today = new Date().setHours(0, 0, 0, 0);
     return selectedDate >= today;
   };
+  useEffect(() => {
+    const fetchUserses = async () => {
+      try {
+        const response = await axios.get("http://localhost:7000/users/alluser");
+        console.log(response.data.tasks)
+        setUsers(response.data.tasks); // Store users data in state
+        // setLoading(false); // Set loading to false after data is fetched
+      } catch (err) {
+        setError("Failed to fetch users");
+        // setLoading(false);
+      }
+    };
 
+    fetchUserses(); // Call the function to fetch users data
+  }, []);
   const handleFormSubmit = async (e) => {
     e.preventDefault();
 
@@ -163,21 +178,31 @@ const TaskList = () => {
     }
   };
   useEffect(() => {
-    // Fetch tasks from the server on component mount
     const fetchTasks = async () => {
       try {
-        const response = await axios.get("http://localhost:7000/users", {
+        // Conditional URL based on the user's role
+        const url =
+          checkAdmin.role === "Admin"
+            ? "http://localhost:7000/users"
+            : `http://localhost:7000/users/task/${checkAdmin._id}`;
+  
+        const response = await axios.get(url, {
           headers: { Authorization: `Bearer ${checkAdmin.token}` },
         });
-        setTasks(response.data.data);
-        localStorage.setItem("tasks", JSON.stringify(response.data.data)); // Store the tasks in localStorage
+  
+        setTasks(response.data.data); // Set tasks in state
+        localStorage.setItem("tasks", JSON.stringify(response.data.data)); // Store tasks in localStorage
       } catch (error) {
         console.error("Error fetching tasks:", error);
       }
     };
-
-    fetchTasks();
-  }, [setTasks]);
+    
+    // Only fetch tasks if checkAdmin is available and has the required role
+    if (checkAdmin && checkAdmin.token) {
+      fetchTasks();
+    }
+  }, [checkAdmin, setTasks]);
+  
 
   const editTask = (task) => {
     setNewTask({
@@ -290,7 +315,7 @@ const TaskList = () => {
   //   };
   //   // taskList
   // }, []);
-
+// console.log(users,"users")
   return (
     <div className="task-list">
       <h2>Tasks</h2>
@@ -395,18 +420,12 @@ const TaskList = () => {
                     onChange={handleInputChange}
                   >
                     <option value="">Select User</option>
-                    {tasks
-                      ?.map((task) => task.assignedUser)
-                      .filter(
-                        (user, index, self) =>
-                          user &&
-                          self.findIndex((u) => u?._id === user?._id) === index // Unique users
-                      )
-                      .map((user) => (
-                        <option key={user._id} value={user._id}>
-                          {user.username}
-                        </option>
-                      ))}
+            {users
+              .map((user) => (
+                <option key={user._id} value={user._id}>
+                  {user.username} {/* Display the username */}
+                </option>
+              ))}
                   </select>
 
                 </label>
@@ -456,9 +475,9 @@ const TaskList = () => {
                     value={selectedStatus}
                     onChange={(e) => setSelectedStatus(e.target.value)}
                   >
-                    <option value="To Do">Pending</option>
+                    <option value="To Do">To Do</option>
                     <option value="In Progress">In Progress</option>
-                    <option value="Done">Completed</option>
+                    <option value="Done">Done</option>
                   </select>
                 </label>
               </div>
@@ -471,7 +490,7 @@ const TaskList = () => {
           </div>
         </div>
       )}
-
+{isAdmin && (
       <div className="filters">
         <label>
           Filter by Status:
@@ -492,14 +511,19 @@ const TaskList = () => {
           />
         </label>
       </div>
-
+)}
       <ul className="task-list-items">
         {filterTasks().map((task) => (
           <li key={task._id}>
             <div className="task-item">
               <div>
                 <p>Title: {task.title}</p>
-                <p>Assigned User: {task.assignedUser?.username || "Not Assigned"}</p>
+                
+      {task.assignedUser?.username ? (
+        <>
+          Assigned User: {task.assignedUser.username}
+        </>
+      ) : ''}
                 <p>Description: {task.description}</p>
                 <p>Status: {task.status}</p>
                 <p>Due Date: {new Date(task.dueDate).toLocaleDateString()}</p>

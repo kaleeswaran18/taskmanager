@@ -1,50 +1,44 @@
 import React, { createContext, useState, useEffect, useContext } from "react";
 import axios from "axios";
-import io from 'socket.io-client';
-
+import io from "socket.io-client";
 
 export const AppContext = createContext();
 
 const AppProvider = ({ children }) => {
   const [tasks, setTasks] = useState([]); // State for tasks
   const [user, setUser] = useState(null); // Store logged-in user information
-  const [socketCon, setSocketCon] = useState(null)
+  const [socketCon, setSocketCon] = useState(null);
 
-  // Load tasks from localStorage on mount
+  // Initialize WebSocket connection
   useEffect(() => {
-    const storedTasks = JSON.parse(localStorage.getItem("tasks"));
-    if (storedTasks) {
-      setTasks(storedTasks);
-    }
-    const socket = io('http://localhost:7000');
-    setSocketCon(socket)
+    const socket = io("http://localhost:7000");
+    setSocketCon(socket);
 
-    socket.on('newTask', (data) => {
-      console.log(data, "javdash")
-      var out = []
-      out = [...tasks]
-      out.push(data)
-      setTasks(out);
-    })
+    // Listen for new task events
+    socket.on("newTask", (data) => {
+      const newTask = {
+        ...data,
+        updateTime: new Date().toLocaleTimeString(),
+        date: new Date().toISOString().split("T")[0],
+      };
 
-    //new event list
-    // socket.on('updateTask', (data) => {
-    //   console.log(data, "javdash")
-    //   var out = []
-    //   out = [...tasks]
-    //   out.push(data)
-    //   setTasks(out);
-    // })
+      setTasks((prevTasks) => {
+        const updatedTasks = [...prevTasks, newTask];
+        localStorage.setItem("tasks", JSON.stringify(updatedTasks));
+        return updatedTasks;
+      });
+    });
 
     return () => {
       socket.disconnect();
-    }
+    };
   }, []);
 
-  // Fetch tasks from API when the user logs in
+  // Fetch tasks from API when user logs in
   useEffect(() => {
     if (user) {
       const fetchData = async () => {
+       
         try {
           const url =
             user.role === "Admin"
@@ -52,11 +46,18 @@ const AppProvider = ({ children }) => {
               : `http://localhost:7000/users/task/${user._id}`;
           const response = await axios.get(url, {
             headers: {
-              Authorization: `Bearer ${user.token}`, // Include token in Authorization header
+              Authorization: `Bearer ${user.token}`,
             },
           });
-          setTasks(response.data.data);
-          localStorage.setItem("tasks", JSON.stringify(response.data.data)); // Save to localStorage
+
+          const tasksWithAdditionalFields = response.data.data.map((task) => ({
+            ...task,
+            updateTime: new Date().toLocaleTimeString(),
+            date: new Date().toISOString().split("T")[0],
+          }));
+
+          setTasks(tasksWithAdditionalFields);
+          localStorage.setItem("tasks", JSON.stringify(tasksWithAdditionalFields));
         } catch (error) {
           console.error("Error fetching tasks:", error);
         }
@@ -65,30 +66,42 @@ const AppProvider = ({ children }) => {
       fetchData();
     }
   }, [user]);
-  console.log(tasks, "tasks")
-  // Task management functions
+
+  // Add a new task
   const addTask = (task) => {
+    const newTask = {
+      ...task,
+      updateTime: new Date().toLocaleTimeString(),
+      date: new Date().toISOString().split("T")[0],
+    };
+
     setTasks((prevTasks) => {
-      const updatedTasks = [...prevTasks, task];
-      localStorage.setItem("tasks", JSON.stringify(updatedTasks)); // Update localStorage
+      const updatedTasks = [...prevTasks, newTask];
+      localStorage.setItem("tasks", JSON.stringify(updatedTasks));
       return updatedTasks;
     });
+
+    if (socketCon) {
+      socketCon.emit("createTask", newTask);
+    }
   };
 
+  // Update an existing task
   const updateTask = (updatedTask) => {
     setTasks((prevTasks) => {
       const updatedTasks = prevTasks.map((task) =>
-        task.id === updatedTask.id ? updatedTask : task
+        task.taskId === updatedTask.taskId ? updatedTask : task
       );
-      localStorage.setItem("tasks", JSON.stringify(updatedTasks)); // Update localStorage
+      localStorage.setItem("tasks", JSON.stringify(updatedTasks));
       return updatedTasks;
     });
   };
 
+  // Delete a task
   const deleteTask = (id) => {
     setTasks((prevTasks) => {
-      const updatedTasks = prevTasks.filter((task) => task.id !== id);
-      localStorage.setItem("tasks", JSON.stringify(updatedTasks)); // Update localStorage
+      const updatedTasks = prevTasks.filter((task) => task.taskId !== id);
+      localStorage.setItem("tasks", JSON.stringify(updatedTasks));
       return updatedTasks;
     });
   };
@@ -97,13 +110,13 @@ const AppProvider = ({ children }) => {
     <AppContext.Provider
       value={{
         tasks,
-        setTasks, // Ensure `setTasks` is provided here
+        setTasks,
         user,
         setUser,
         addTask,
         updateTask,
         deleteTask,
-        socketCon
+        socketCon,
       }}
     >
       {children}
@@ -111,7 +124,6 @@ const AppProvider = ({ children }) => {
   );
 };
 
-// Custom hook for using AppContext
 export const useAppContext = () => useContext(AppContext);
 
 export default AppProvider;
