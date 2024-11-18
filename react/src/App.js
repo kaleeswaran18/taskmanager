@@ -1,33 +1,58 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import TaskProvider from "./context/AppContext";  // Context for tasks
-
-
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import AppProvider from "./context/AppContext"; // Import the AppProvider
 import Home from "./pages/Home";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
 import CreateTask from "./pages/CreateTask";
 import EditTask from "./pages/EditTask";
-import Register from "./pages/Register"; // Register Page
-import Login from "./pages/Login"; // Login Page
-import './App.css';
-import PrivateRoute from './components/PrivateRoute';  // A private route for protected pages
+
+const isAuthenticated = () => !!sessionStorage.getItem("user");
+
+const PrivateRoute = ({ children }) => {
+  return isAuthenticated() ? children : <Navigate to="/login" />;
+};
 
 const App = () => {
   return (
-   
-      <TaskProvider> {/* Wrap task management in the Task context */}
-        <Router>
-          <Routes>
-            <Route path="/home" element={<Home />} />
-            <Route path="/" element={<Register />} />
-            <Route path="/login" element={<Login />} />
+    <AppProvider>
+      <Router>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
 
-            {/* Private Routes - only accessible when logged in */}
-            <Route path="/create-task" element={<CreateTask/>} />
-            <Route path="/edit-task/:id" element={<PrivateRoute component={EditTask} />} />
-          </Routes>
-        </Router>
-      </TaskProvider>
-    
+          {/* Protected Routes */}
+          <Route
+            path="/home"
+            element={
+              <PrivateRoute>
+                <Home />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/create-task"
+            element={
+              <PrivateRoute>
+                <CreateTask />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/edit-task/:id"
+            element={
+              <PrivateRoute>
+                <EditTask />
+              </PrivateRoute>
+            }
+          />
+
+          {/* Default Redirect */}
+          <Route path="*" element={<Navigate to={isAuthenticated() ? "/home" : "/login"} />} />
+        </Routes>
+      </Router>
+    </AppProvider>
   );
 };
 

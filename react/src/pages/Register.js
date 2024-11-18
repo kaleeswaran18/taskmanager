@@ -1,9 +1,9 @@
-// src/pages/Register.js
-
 import React, { useState } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify'; // Import toast
+import { useNavigate, Link } from 'react-router-dom';
+import { toast, ToastContainer } from 'react-toastify'; // Import toast and container
+import 'react-toastify/dist/ReactToastify.css'; // Import toast CSS
+import './login.css';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -11,10 +11,8 @@ const Register = () => {
   const [formData, setFormData] = useState({
     username: '',
     password: '',
-    role: 'User' // Default role as 'user'
+    role: 'User', // Default role
   });
-
-  const [error, setError] = useState('');
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -23,37 +21,71 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Basic validation
+    if (!formData.username || !formData.password) {
+      toast.error('Please fill in all fields.');
+      return;
+    }
+
     try {
       const response = await axios.post('http://localhost:7000/users/register', formData);
-      toast.success(response.data.message); // Show success message
-      navigate('/login'); // Redirect to login page
+
+      // Show success message using toast
+      toast.success(response.data.message);
+
+      // Redirect to login page after successful registration
+      setTimeout(() => navigate('/login'), 1000); // Slight delay for user to see the success message
     } catch (err) {
-      toast.error(err.response ? err.response.data.message : 'Server error'); // Show error message
+      toast.error(err.response?.data?.message || 'Server error'); // Display error
     }
   };
 
   return (
-    <div>
-      <h2>Register</h2>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>Username</label>
-          <input type="text" name="username" value={formData.username} onChange={handleChange} required />
+    <div className="register-container">
+      <ToastContainer /> {/* Toast notification container */}
+      <h2 className="register-title">Register</h2>
+      <form className="register-form" onSubmit={handleSubmit}>
+        <div className="form-group">
+          <label className="form-label">Username</label>
+          <input
+            type="text"
+            name="username"
+            className="form-input"
+            value={formData.username}
+            onChange={handleChange}
+            
+          />
         </div>
-        <div>
-          <label>Password</label>
-          <input type="password" name="password" value={formData.password} onChange={handleChange} required />
+        <div className="form-group">
+          <label className="form-label">Password</label>
+          <input
+            type="password"
+            name="password"
+            className="form-input"
+            value={formData.password}
+            onChange={handleChange}
+   
+          />
         </div>
-        <div>
-          <label>Role</label>
-          <select name="role" value={formData.role} onChange={handleChange}>
+        <div className="form-group">
+          <label className="form-label">Role</label>
+          <select
+            name="role"
+            className="form-select"
+            value={formData.role}
+            onChange={handleChange}
+          >
             <option value="User">User</option>
             <option value="Admin">Admin</option>
           </select>
         </div>
-        <button type="submit">Register</button>
+        <button type="submit" className="submit-button">
+          Register
+        </button>
       </form>
+      <p className="login-prompt">
+        Already signed up? <Link to="/login" className="login-link">Login here</Link>
+      </p>
     </div>
   );
 };

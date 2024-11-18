@@ -48,6 +48,13 @@ const getTasks = async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 };
+const getalltask=async(req,res)=>{
+  const currentDate = moment().format('YYYY-MM-DD');
+  const tasks = await Task.find({dueDate:currentDate}).populate("assignedUser", "username role");
+  
+
+  res.status(200).json({ data: tasks });
+}
 const logdetails = async (req, res) => {
   if (req.query.role == 'Admin') {
     const details = await ActiveLog.find().populate("userId", "username").populate("taskId", "title")
@@ -100,7 +107,7 @@ const updateTask = async (req, res) => {
         { new: true, runValidators: true }
       );
 
-    io.to(userSockets[id]).emit('updateTask', value)
+      io.to(userSockets[check[0].assignedUser]).emit('newTask', value)
 
 
       res.status(200).json({ message: "Task updated successfully", data: task });
@@ -126,6 +133,7 @@ const updateTask = async (req, res) => {
         updateTime: currentTime,
         details: status
       })
+      io.to(userSockets[assignedUser]).emit('newTask', value)
       res.status(200).json({ message: "Task updated successfully", data: task });
     }
 
@@ -142,6 +150,7 @@ const deleteTask = async (req, res) => {
   try {
     const task = await Task.findByIdAndDelete(req.params.id);
     console.log(task, 'task')
+    const { io, user } = req
     if (!task) return res.status(404).json({ message: "Task not found" });
     const currentDate = new Date();
     const date = currentDate.toISOString().split('T')[0]; // Get YYYY-MM-DD format
@@ -155,6 +164,7 @@ const deleteTask = async (req, res) => {
       date: date,
       updateTime: currentTime
     })
+    io.to(userSockets[task.assignedUser]).emit('newTask', value)
     res.status(200).json({ message: "Task deleted successfully" });
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -167,5 +177,6 @@ module.exports = {
   getTaskById,
   updateTask,
   deleteTask,
-  logdetails
+  logdetails,
+  getalltask
 };

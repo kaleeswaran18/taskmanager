@@ -1,18 +1,17 @@
-// src/components/PrivateRoute.js
+// PrivateRoute.js
 import React from 'react';
-import { Navigate } from 'react-router-dom';
-import { useContext } from 'react';
-import { AppContext } from "../context/AppContext";  // Import the combined App context
+import { Route, Navigate } from 'react-router-dom';
 
-const PrivateRoute = ({ children }) => {
-  const { isAuthenticated } = useContext(AppContext);  // Check if the user is authenticated
-
-  if (!isAuthenticated) {
-    // If not authenticated, redirect to login page
-    return <Navigate to="/login" />;
-  }
-
-  return children;  // If authenticated, render the child components
+const PrivateRoute = ({ element, ...rest }) => {
+  const user = sessionStorage.getItem('user'); // Check if user data exists in sessionStorage
+  
+  // Return a Route, and conditionally render based on user's session
+  return (
+    <Route 
+      {...rest} 
+      element={user ? element : <Navigate to="/login" />} 
+    />
+  );
 };
 
 export default PrivateRoute;

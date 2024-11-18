@@ -1,6 +1,8 @@
 import React, { createContext, useState, useEffect, useContext } from "react";
 import axios from "axios";
 import io from "socket.io-client";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export const AppContext = createContext();
 
@@ -13,9 +15,17 @@ const AppProvider = ({ children }) => {
   useEffect(() => {
     const socket = io("http://localhost:7000");
     setSocketCon(socket);
-
+socket.on("newcornjob",(data)=>{
+  toast.success(`${data.assignedUser.username} this is late date for your task of : ${data.title}`, {
+    position: "top-right",
+    autoClose: 3000,
+  });
+  // console.log("checkvalueallllll",data)
+  
+})
     // Listen for new task events
     socket.on("newTask", (data) => {
+      console.log("check",data)
       const newTask = {
         ...data,
         updateTime: new Date().toLocaleTimeString(),
@@ -24,8 +34,14 @@ const AppProvider = ({ children }) => {
 
       setTasks((prevTasks) => {
         const updatedTasks = [...prevTasks, newTask];
-        localStorage.setItem("tasks", JSON.stringify(updatedTasks));
+        sessionStorage.setItem("tasks", JSON.stringify(updatedTasks)); // Store in sessionStorage
         return updatedTasks;
+      });
+
+      // Display a toast notification for the new task
+      toast.success(`${data.action} by: ${data.title}`, {
+        position: "top-right",
+        autoClose: 3000,
       });
     });
 
@@ -38,7 +54,6 @@ const AppProvider = ({ children }) => {
   useEffect(() => {
     if (user) {
       const fetchData = async () => {
-       
         try {
           const url =
             user.role === "Admin"
@@ -57,9 +72,24 @@ const AppProvider = ({ children }) => {
           }));
 
           setTasks(tasksWithAdditionalFields);
-          localStorage.setItem("tasks", JSON.stringify(tasksWithAdditionalFields));
+          sessionStorage.setItem(
+            "tasks",
+            JSON.stringify(tasksWithAdditionalFields)
+          );
+
+          // Notify user of successful task fetch
+          toast.success(`Tasks fetched successfully for ${user.username}`, {
+            position: "top-right",
+            autoClose: 3000,
+          });
         } catch (error) {
           console.error("Error fetching tasks:", error);
+
+          // Notify user of task fetch error
+          toast.error(`Failed to fetch tasks: ${error.message}`, {
+            position: "top-right",
+            autoClose: 3000,
+          });
         }
       };
 
@@ -77,13 +107,19 @@ const AppProvider = ({ children }) => {
 
     setTasks((prevTasks) => {
       const updatedTasks = [...prevTasks, newTask];
-      localStorage.setItem("tasks", JSON.stringify(updatedTasks));
+      sessionStorage.setItem("tasks", JSON.stringify(updatedTasks)); // Store in sessionStorage
       return updatedTasks;
     });
 
     if (socketCon) {
       socketCon.emit("createTask", newTask);
     }
+
+    // Notify user of task addition
+    toast.success(`Task "${task.title}" added successfully!`, {
+      position: "top-right",
+      autoClose: 3000,
+    });
   };
 
   // Update an existing task
@@ -92,8 +128,14 @@ const AppProvider = ({ children }) => {
       const updatedTasks = prevTasks.map((task) =>
         task.taskId === updatedTask.taskId ? updatedTask : task
       );
-      localStorage.setItem("tasks", JSON.stringify(updatedTasks));
+      sessionStorage.setItem("tasks", JSON.stringify(updatedTasks)); // Store in sessionStorage
       return updatedTasks;
+    });
+
+    // Notify user of task update
+    toast.info(`Task "${updatedTask.title}" updated successfully!`, {
+      position: "top-right",
+      autoClose: 3000,
     });
   };
 
@@ -101,8 +143,14 @@ const AppProvider = ({ children }) => {
   const deleteTask = (id) => {
     setTasks((prevTasks) => {
       const updatedTasks = prevTasks.filter((task) => task.taskId !== id);
-      localStorage.setItem("tasks", JSON.stringify(updatedTasks));
+      sessionStorage.setItem("tasks", JSON.stringify(updatedTasks)); // Store in sessionStorage
       return updatedTasks;
+    });
+
+    // Notify user of task deletion
+    toast.warn(`Task deleted successfully!`, {
+      position: "top-right",
+      autoClose: 3000,
     });
   };
 
@@ -120,6 +168,8 @@ const AppProvider = ({ children }) => {
       }}
     >
       {children}
+      {/* Add ToastContainer to render notifications */}
+      <ToastContainer />
     </AppContext.Provider>
   );
 };

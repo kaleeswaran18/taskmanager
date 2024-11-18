@@ -1,11 +1,12 @@
 import React, { useState, useContext, useEffect } from "react";
 import { AppContext, useAppContext } from "../context/AppContext";
-import { Link } from "react-router-dom";
+import { Link,useNavigate } from "react-router-dom";
 import "./Tasklist.css"; // Add your CSS file for styling
 import axios from "axios";
 import { io } from "socket.io-client"; // Import socket.io-client
 
 const TaskList = () => {
+  const navigate = useNavigate();
   const { tasks, setTasks } = useContext(AppContext); // Get tasks and setTasks from context
   const [isPopupOpen, setIsPopupOpen] = useState(false); // State for task form popup visibility
   const [users, setUsers] = useState([]);
@@ -26,7 +27,7 @@ const TaskList = () => {
   const [taskToChangeStatus, setTaskToChangeStatus] = useState(null); // Store task ID to change status
   const [activeLogPopup, setActiveLogPopup] = useState(false); // State for showing active log popup
   const [activeLogs, setActiveLogs] = useState([]);
-  const checkAdmin = JSON.parse(localStorage.getItem("user"));
+  const checkAdmin = JSON.parse(sessionStorage.getItem("user"));
   const isAdmin = checkAdmin?.role === "Admin"; // Check if the user is an admin
 
 
@@ -101,24 +102,25 @@ const TaskList = () => {
           headers: { Authorization: `Bearer ${checkAdmin.token}` },
         });
 
-        // Update the tasks state and localStorage with the updated tasks
+        
         setTasks(updatedTasksResponse.data.data);
-        localStorage.setItem("tasks", JSON.stringify(updatedTasksResponse.data.data));
+        sessionStorage.setItem("tasks", JSON.stringify(updatedTasksResponse.data.data));
       } else {
         // Create new task
         const response = await axios.post("http://localhost:7000/users", taskData, {
           headers: { Authorization: `Bearer ${checkAdmin.token}` },
         });
 
-        // Add new task to state and localStorage
+        
         setTasks((prevTasks) => [...prevTasks, response.data.data]);
-        localStorage.setItem("tasks", JSON.stringify([...tasks, response.data.data]));
+        sessionStorage.setItem("tasks", JSON.stringify([...tasks, response.data.data]));
       }
 
       // Reset the form
       setNewTask({ title: "", description: "", dueDate: "", status: "To Do", assignedUser: "" });
       setIsPopupOpen(false);
       setEditId("");
+      setError("")
     } catch (error) {
       console.error("Failed to create/update task:", error);
       setError("Failed to save task. Please try again.");
@@ -191,7 +193,7 @@ const TaskList = () => {
         });
   
         setTasks(response.data.data); // Set tasks in state
-        localStorage.setItem("tasks", JSON.stringify(response.data.data)); // Store tasks in localStorage
+        sessionStorage.setItem("tasks", JSON.stringify(response.data.data)); 
       } catch (error) {
         console.error("Error fetching tasks:", error);
       }
@@ -227,9 +229,9 @@ const TaskList = () => {
         headers: { Authorization: `Bearer ${checkAdmin.token}` },
       });
 
-      // Remove the task from state and localStorage after successful deletion
+      
       setTasks((prevTasks) => prevTasks.filter((task) => task._id !== taskToDelete));
-      localStorage.setItem("tasks", JSON.stringify(tasks.filter((task) => task._id !== taskToDelete)));
+      sessionStorage.setItem("tasks", JSON.stringify(tasks.filter((task) => task._id !== taskToDelete)));
       setNewTask({ title: "", description: "", dueDate: "", status: "To Do", assignedUser: "" });
       // setIsPopupOpen(false);
       setEditId("");
@@ -273,13 +275,12 @@ const TaskList = () => {
         headers: { Authorization: `Bearer ${checkAdmin.token}` },
       });
 
-      // Update the task's status in state and localStorage
       setTasks((prevTasks) =>
         prevTasks.map((task) =>
           task._id === taskToChangeStatus ? { ...task, status: selectedStatus } : task
         )
       );
-      localStorage.setItem("tasks", JSON.stringify(tasks));
+      sessionStorage.setItem("tasks", JSON.stringify(tasks));
 
       // Close the popup
       setStatusChangePopup(false);
@@ -292,9 +293,18 @@ const TaskList = () => {
     setStatusChangePopup(false);
   };
 
-  // Fetch tasks from localStorage when component mounts
+ const logout=()=>{
+  sessionStorage.removeItem("user");
+  sessionStorage.removeItem("tasks");
+  setTasks([])
+    // Optionally, clear any user data in context
+    
+
+    // Redirect the user to the login page
+    navigate("/login");
+ }
   useEffect(() => {
-    const storedTasks = JSON.parse(localStorage.getItem("tasks"));
+    const storedTasks = JSON.parse(sessionStorage.getItem("tasks"));
     if (storedTasks) {
       setTasks(storedTasks);
     }
@@ -318,7 +328,7 @@ const TaskList = () => {
 // console.log(users,"users")
   return (
     <div className="task-list">
-      <h2>Tasks</h2>
+      <h1>{}</h1>
 
       {isAdmin && (
         <button className="add-task-btn" onClick={() => setIsPopupOpen((prev) => !prev)}>
@@ -328,6 +338,31 @@ const TaskList = () => {
       <button className="view-log-btn" onClick={toggleActiveLogPopup}>
         {activeLogPopup ? "Close Active Log" : "View Active Log"}
       </button>
+      <button className="view-log-btn" onClick={logout}>
+        Logout
+      </button>
+      {isAdmin && (
+      <div className="filters">
+        <label>
+          Filter by Status:
+          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+            <option value="">All</option>
+            <option value="To Do">To Do</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Done">Done</option>
+          </select>
+        </label>
+
+        <label>
+          Filter by Due Date:
+          <input
+            type="date"
+            value={filterDueDate}
+            onChange={(e) => setFilterDueDate(e.target.value)}
+          />
+        </label>
+      </div>
+)}
       {activeLogPopup && (
         <div className="popup-overlay">
           <div className="popup">
@@ -339,7 +374,22 @@ const TaskList = () => {
               {activeLogs?.map((log, index) => (
                 <div key={log._id} className="log-card">
                   <div className="log-header">
-                    <h4>{log.userId?.username}</h4> {/* Display user name */}
+                  {
+  log.action !== "status change" ? (
+    <h4>
+      Admin side changes of  {checkAdmin.username === log.userId?.username
+        ? "Your task"
+        : log.userId?.username} 
+    </h4>
+  ) : (
+    <h4>
+      {checkAdmin.username === log.userId?.username
+        ? "Your"
+        : log.userId?.username} side change
+    </h4>
+  )
+}
+
                     <p>{log.action}</p> {/* Display action */}
                   </div>
                   <div className="log-body">
@@ -490,28 +540,7 @@ const TaskList = () => {
           </div>
         </div>
       )}
-{isAdmin && (
-      <div className="filters">
-        <label>
-          Filter by Status:
-          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
-            <option value="">All</option>
-            <option value="To Do">To Do</option>
-            <option value="In Progress">In Progress</option>
-            <option value="Done">Done</option>
-          </select>
-        </label>
-
-        <label>
-          Filter by Due Date:
-          <input
-            type="date"
-            value={filterDueDate}
-            onChange={(e) => setFilterDueDate(e.target.value)}
-          />
-        </label>
-      </div>
-)}
+   {tasks && tasks?.length > 0 ? (
       <ul className="task-list-items">
         {filterTasks().map((task) => (
           <li key={task._id}>
@@ -545,6 +574,9 @@ const TaskList = () => {
           </li>
         ))}
       </ul>
+  ): (
+    <p>No tasks available.</p>
+  )}
     </div>
   );
 };

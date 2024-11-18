@@ -9,7 +9,8 @@ const {
     getTaskById,
     updateTask,
     deleteTask,
-    logdetails
+    logdetails,
+    getalltask
   } = require("../controller/task");
 
 const router = express.Router();
@@ -40,7 +41,7 @@ router.post('/logout', logout);
 
 // Get all tasks (Only Admin can access)
 router.get("/", verifyToken, checkRole(["Admin"]), getTasks);
-
+router.get("/getalltask",getalltask);
 // Get a single task by ID (Admins can access any task; Users only their own)
 router.get("/task/:id", verifyToken, checkRole(["Admin", "User"]), getTaskById);
 
