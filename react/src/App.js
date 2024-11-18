@@ -4,8 +4,7 @@ import AppProvider from "./context/AppContext"; // Import the AppProvider
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import CreateTask from "./pages/CreateTask";
-import EditTask from "./pages/EditTask";
+
 
 const isAuthenticated = () => !!sessionStorage.getItem("user");
 
@@ -31,23 +30,8 @@ const App = () => {
               </PrivateRoute>
             }
           />
-          <Route
-            path="/create-task"
-            element={
-              <PrivateRoute>
-                <CreateTask />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/edit-task/:id"
-            element={
-              <PrivateRoute>
-                <EditTask />
-              </PrivateRoute>
-            }
-          />
-
+         
+        
           {/* Default Redirect */}
           <Route path="*" element={<Navigate to={isAuthenticated() ? "/home" : "/login"} />} />
         </Routes>

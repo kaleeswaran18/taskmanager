@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
-import { toast, ToastContainer } from 'react-toastify'; // Import toast and container
-import 'react-toastify/dist/ReactToastify.css'; // Import toast CSS
+import { toast, ToastContainer } from 'react-toastify'; 
+import 'react-toastify/dist/ReactToastify.css'; 
 import './login.css';
 
 const Register = () => {
@@ -11,7 +11,7 @@ const Register = () => {
   const [formData, setFormData] = useState({
     username: '',
     password: '',
-    role: 'User', // Default role
+    role: 'User', 
   });
 
   const handleChange = (e) => {
@@ -30,13 +30,13 @@ const Register = () => {
     try {
       const response = await axios.post('http://localhost:7000/users/register', formData);
 
-      // Show success message using toast
+     
       toast.success(response.data.message);
 
-      // Redirect to login page after successful registration
-      setTimeout(() => navigate('/login'), 1000); // Slight delay for user to see the success message
+     
+      setTimeout(() => navigate('/login'), 1000);
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Server error'); // Display error
+      toast.error(err.response?.data?.message || 'Server error'); 
     }
   };
 
