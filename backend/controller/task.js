@@ -24,7 +24,7 @@ const createTask = async (req, res) => {
       date:date,
       updateTime:currentTime
     })
-    console.log(value,'value')
+    console.log(value,'valuefind',task)
 
     io.to(userSockets[task.assignedUser]).emit('newTask', value)
 
